@@ -438,7 +438,7 @@ sumN.4=matrix(NA,1,T-5)
 
 data = list(treated.does=treated.does,N.init=N.init, N.obs.init=N.obs.init, T=T, Park=Park, M=M, M.3yr=M.3yr, M.1yr=M.1yr, M.ster=M.ster, M.cull=M.cull, N.obs=N.obs, N.obsno1s=N.obsno1s, y.alpha=y.alpha2, area=area,N=N,sumNpark=sumNpark.4,sumNpark.3yr=sumNpark.3yr,sumNpark.1yr=sumNpark.1yr,sumNpark.ster=sumNpark.ster,sumN=sumN.4,sumN.3yr=sumN.3yr,sumN.1yr=sumN.1yr,sumN.ster=sumN.ster,sumN.cull=sumN.cull,N.3yr=N.3yr,N.1yr=N.1yr,N.ster=N.ster,N.cull=N.cull,M.lambda.cull=M.lambda.cull,M.lambda.ster=M.lambda.ster,M.lambda.1yr=M.lambda.1yr,M.lambda.3yr=M.lambda.3yr)
 
-jM.4=jags.model(past(model.dir,"Deer_Model_Experiments_JAGS.R",sep=""), data=data,inits=inits, n.chain=length(inits), n.adapt=n.adapt)
+jM.4=jags.model(paste(model.dir,"Deer_Model_Experiments_JAGS.R",sep=""), data=data,inits=inits, n.chain=length(inits), n.adapt=n.adapt)
 
 update(jM.4,n.iter=n.update)
 
@@ -557,7 +557,7 @@ sumN.9=matrix(NA,1,T-5)
 
 data = list(treated.does=treated.does,N.init=N.init, N.obs.init=N.obs.init, T=T, Park=Park, M=M, M.3yr=M.3yr, M.1yr=M.1yr, M.ster=M.ster, M.cull=M.cull, N.obs=N.obs, N.obsno1s=N.obsno1s, y.alpha=y.alpha2, area=area,N=N,sumNpark=sumNpark.9,sumNpark.3yr=sumNpark.3yr,sumNpark.1yr=sumNpark.1yr,sumNpark.ster=sumNpark.ster,sumN=sumN.9,sumN.3yr=sumN.3yr,sumN.1yr=sumN.1yr,sumN.ster=sumN.ster,sumN.cull=sumN.cull,N.3yr=N.3yr,N.1yr=N.1yr,N.ster=N.ster,N.cull=N.cull,M.lambda.cull=M.lambda.cull,M.lambda.ster=M.lambda.ster,M.lambda.1yr=M.lambda.1yr,M.lambda.3yr=M.lambda.3yr)
 
-jM.9=jags.model(paste(model.dir,"Deer_Model_Experiments_JAGS.R"), data=data,inits=inits, n.chain=length(inits), n.adapt=n.adapt)
+jM.9=jags.model(paste(model.dir,"Deer_Model_Experiments_JAGS.R",sep=""), data=data,inits=inits, n.chain=length(inits), n.adapt=n.adapt)
 
 zm.9=coda.samples(jM.9,variable.names=c("s.fawn","s.adult.female","s.adult.male","r","beta","ratio","sigma.p"),n.iter=n.iter,thin=1)
 

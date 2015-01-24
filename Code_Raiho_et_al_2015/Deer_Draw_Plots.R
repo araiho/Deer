@@ -1,4 +1,4 @@
-load(paste(dump.dir,"~alt.MGMT.Rdata"))
+load(paste0(dump.dir,"alt.MGMT.Rdata"))
 #head(alt.MGMT1)
 library(reshape2)
 library(ggplot2)

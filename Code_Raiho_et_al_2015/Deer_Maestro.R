@@ -7,9 +7,9 @@ source("~/Documents/Deer/Code_Raiho_et_al_2015/Deer_Data_Formatting.R")
 DRAW=TRUE #set to TRUE if you want to save figures as pdf automatically
 SAVE=TRUE #set to TRUE if you want to save data to file automatically
 
-n.adapt = 2000
-n.update = 4000
-n.iter = 20000
+n.adapt = 2
+n.update = 4
+n.iter = 20
 
 model.dir = "~/Documents/Deer/Code_Raiho_et_al_2015/"
 dump.dir = "~/Documents/Deer/Dump/"
