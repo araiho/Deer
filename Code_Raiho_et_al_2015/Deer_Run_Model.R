@@ -4,7 +4,7 @@
 ##### MODEL RUN
 ##### "Forecasting the Effects of Fertility Control on Overabundant Ungulates" 
 ##### Created by: Ann Raiho 
-##### Last Edited on: 26 November 2014
+##### Last Edited on: 24 January 2015
 #####
 #####
 
@@ -90,16 +90,20 @@ for(i in 1:Park){
 
 N.obs.init=as.matrix(N.obs[N.obs[,4]==1,])
 
-inits= list(list(s.fawn=.7,s.adult.female=.7,s.adult.male=.7,sigma.p=.5,r=.5,beta=10,ratio=.3),
-             list(s.fawn=.5,s.adult.female=.5,s.adult.male=.5,sigma.p=1.9,r=.3,beta=25,ratio=.5),
-             list(s.fawn=.3,s.adult.female=.9,s.adult.male=.9,sigma.p=.2,r=.5,beta=50,ratio=.7))
-            
+inits= list(list(a = 2, a1 = 6, a2 = 50, b = 1, b1 = 7, b2 = 30, s.fawn=rep(.7,8),s.adult.female=rep(.7,8),s.adult.male=rep(.7,8),sigma.p=.5,r=.5,beta=10,ratio=.3),
+            list(a = 6, a1 = 2, a2 = 1, b = 1, b1 = 3, b2 = 8, s.fawn=rep(.5,8),s.adult.female=rep(.5,8),s.adult.male=rep(.5,8),sigma.p=1.9,r=.3,beta=25,ratio=.5),
+            list(a = 4, a1 = 4, a2 = 4, b = 4, b1 = 7, b2 = 7, s.fawn=rep(.3,8),s.adult.female=rep(.9,8),s.adult.male=rep(.9,8),sigma.p=.2,r=.5,beta=50,ratio=.7))
+
 M.lambda=matrix(0,3,3)
 M.lambda[1,2] <- NA
 M.lambda[2,1] <- NA
 M.lambda[2,2] <- NA
 
-data = list(N.init=N.init, N.obs.init=N.obs.init, T=T, Park=Park, M=M, N.obs=N.obs, N.obsno1s=N.obsno1s, y.alpha=y.alpha2, area=area,N=N,sumNpark=sumNpark,sumN=sumN,M.lambda=M.lambda,denNpark=denNpark)
+data = list(N.init=N.init, N.obs.init=N.obs.init, T=T, Park=Park, M=M, N.obs=N.obs,
+            N.obsno1s=N.obsno1s, y.alpha=y.alpha2, area=area,N=N,sumNpark=sumNpark,
+            sumN=sumN,M.lambda=M.lambda,denNpark=denNpark,mu.a=mu.a,mu.b=mu.b,mu.a1=mu.a1,
+            mu.b1=mu.b1,mu.a2=mu.a2,mu.b2=mu.b2,sd.a=sd.a,sd.b=sd.b,sd.a1=sd.a1,
+            sd.b1=sd.b1,sd.a2=sd.a2,sd.b2=sd.b2)
 
 #####
 ##### Base Model #####
@@ -109,10 +113,16 @@ jM=jags.model(paste(model.dir,"Deer_Model_JAGS.R",sep=""), data=data,inits=inits
 
 update(jM,n.iter=n.update)
 
-zm=coda.samples(jM,variable.names=c("s.fawn","s.adult.female","s.adult.male","r","beta","sigma.p","ratio"),n.iter=n.iter,thin=1)
+zm=coda.samples(jM,variable.names=c("s.fawn","s.adult.female","s.adult.male","r","beta",
+                                    "sigma.p","ratio","a","b","a1","b1","a2","b2",
+                                    "mean.adult.female", "mean.fawn", "mean.adult.male"),
+                n.iter=n.iter,thin=1)
 
 gelman.diag(zm)
-#plot(zm)
+
+if(DRAW==TRUE) pdf("hier_all_posts.pdf")
+plot(zm) 
+if(DRAW==TRUE) dev.off()
 
 summary.params=summary(zm)
 if(SAVE==TRUE) save(summary.params,file=paste(dump.dir,"summary.params.Rdata",sep=""))
@@ -132,23 +142,29 @@ abline(a=0,b=1)
 text(x=9000,3000,labels=bquote(P[B]==.(format(PB,digits=3))))
 if(DRAW==TRUE) dev.off()
 
-zmj=jags.samples(jM,variable.names=c("s.fawn","s.adult.female","s.adult.male","r","beta","ratio","sigma.p"),n.iter=n.iter,thin=1)
+zmj=jags.samples(jM,variable.names=c("mean.fawn","mean.adult.female","mean.adult.male","r","beta","ratio","sigma.p"),n.iter=n.iter,thin=1)
 
 if(DRAW==TRUE) pdf(paste(dump.dir,"deer.posteriors.pdf",sep=""))
 
 par(mfrow=c(3,3))
-hist(zmj$s.adult.female,xlab="Adult Female Survival",col=8,breaks=20,xlim=c(0,1),freq=FALSE,ylab="Probability Density",main=NA)
+hist(zmj$mean.adult.female,xlab="Adult Female Survival",col=8,breaks=20,xlim=c(0,1),freq=FALSE,ylab="Probability Density",main=NA)
 lines(seq(0,1,.005),dunif(seq(0,1,.005),0,1),lty=2)
-hist(zmj$s.adult.male,xlab="Adult Male Survival",col=8,breaks=20,xlim=c(0,1),freq=FALSE,ylab="Probability Density",main=NA)
+
+hist(zmj$mean.adult.male,xlab="Adult Male Survival",col=8,breaks=20,xlim=c(0,1),freq=FALSE,ylab="Probability Density",main=NA)
 lines(seq(0,1,.005),dunif(seq(0,1,.005),0,1),lty=2)
-hist(zmj$s.fawn,xlab="Juvenile Survival",col=8,breaks=20,xlim=c(0,1),freq=FALSE,ylab="Probability Density",main=NA)
+
+hist(zmj$mean.fawn,xlab="Juvenile Survival",col=8,breaks=20,xlim=c(0,1),freq=FALSE,ylab="Probability Density",main=NA)
 lines(seq(0,1,.005),dunif(seq(0,1,.005),0,1),lty=2)
+
 hist(zmj$r,xlab="Maximum Birth Rate (fawns per doe)",col=8,breaks=20,freq=FALSE,xlim=c(0,2),ylab="Probability Density",main=NA)
 lines(seq(-10,10,.005),dnorm(seq(-10,10,.005),2*3.09*65^-.33,.1304),lty=2)
+
 hist(zmj$ratio,xlab="Juvenile Sex Ratio (females:males)",col=8,breaks=20,xlim=c(.4,.6),ylim=c(0,25),freq=FALSE,ylab="Probability Density",main=NA)
 lines(seq(0,1,.005),dbeta(seq(0,1,.005),312,312),lty=2)
+
 hist(zmj$beta,xlab=expression(paste("Carrying Capacity (deer per ", km^2,")")),col=8,breaks=20,freq=FALSE,ylab="Probability Density",main=NA)
 lines(seq(0,100,.005),dunif(seq(0,100,.005),0,100),lty=2)
+
 hist(zmj$sigma.p,xlab="Process Variance",col=8,breaks=20,freq=FALSE,ylab="Probability Density",main=NA)
 lines(seq(0,2,.005),dunif(seq(0,2,.005),0,2),lty=2)
 if(DRAW==TRUE) dev.off()
@@ -201,6 +217,8 @@ for(t in 1:18){
 save(median.create,file=paste(dump.dir,"median.create.Rdata",sep=""))
 
 if(DRAW==TRUE) pdf(paste(dump.dir,"deer.forecast.pdf",sep=""))
+setEPS()
+postscript("deer.forecast.eps",family="Times")
 Sum.area=mean(as.numeric(area))
 plot(sumN.quant[,2],ylim=c(0,80),ylab=expression(paste("Deer Density ",(km^2))),xlab="Year",type="l",lwd=2, xaxt='n')
 lines(sumN.quant[,1],lty=2,lwd=2)
@@ -375,7 +393,16 @@ M.lambda.cull[1,2] <- NA
   M.lambda.3yr[3,2] <- NA
   M.lambda.3yr[3,3] <- NA
 
-data = list(treated.does=treated.does,N.init=N.init, N.obs.init=N.obs.init, T=T, Park=Park, M=M, M.3yr=M.3yr, M.1yr=M.1yr, M.ster=M.ster, M.cull=M.cull, N.obs=N.obs, N.obsno1s=N.obsno1s, y.alpha=y.alpha2, area=area,N=N,sumNpark=sumNpark.2,sumNpark.3yr=sumNpark.3yr,sumNpark.1yr=sumNpark.1yr,sumNpark.ster=sumNpark.ster,sumN=sumN.2,sumN.3yr=sumN.3yr,sumN.1yr=sumN.1yr,sumN.ster=sumN.ster,sumN.cull=sumN.cull,N.3yr=N.3yr,N.1yr=N.1yr,N.ster=N.ster,N.cull=N.cull,M.lambda.cull=M.lambda.cull,M.lambda.ster=M.lambda.ster,M.lambda.1yr=M.lambda.1yr,M.lambda.3yr=M.lambda.3yr)
+data = list(treated.does=treated.does,N.init=N.init, N.obs.init=N.obs.init, T=T,
+            Park=Park, M=M, M.3yr=M.3yr, M.1yr=M.1yr, M.ster=M.ster, M.cull=M.cull,
+            N.obs=N.obs, N.obsno1s=N.obsno1s, y.alpha=y.alpha2, area=area,N=N,
+            sumNpark=sumNpark.2,sumNpark.3yr=sumNpark.3yr,sumNpark.1yr=sumNpark.1yr,
+            sumNpark.ster=sumNpark.ster,sumN=sumN.2,sumN.3yr=sumN.3yr,sumN.1yr=sumN.1yr,
+            sumN.ster=sumN.ster,sumN.cull=sumN.cull,N.3yr=N.3yr,N.1yr=N.1yr,N.ster=N.ster,
+            N.cull=N.cull,M.lambda.cull=M.lambda.cull,M.lambda.ster=M.lambda.ster,
+            M.lambda.1yr=M.lambda.1yr,M.lambda.3yr=M.lambda.3yr,mu.a=mu.a,mu.b=mu.b,
+            mu.a1=mu.a1,mu.b1=mu.b1,mu.a2=mu.a2,mu.b2=mu.b2,sd.a=sd.a,sd.b=sd.b,sd.a1=sd.a1,
+            sd.b1=sd.b1,sd.a2=sd.a2,sd.b2=sd.b2)
 
 jM.2=jags.model(paste(model.dir,"Deer_Model_Experiments_JAGS.R",sep=""), data=data,inits=inits, n.chain=length(inits), n.adapt=n.adapt)
 
@@ -436,7 +463,16 @@ treated.does = .4
 sumNpark.4=matrix(NA,T-5,Park)
 sumN.4=matrix(NA,1,T-5)
 
-data = list(treated.does=treated.does,N.init=N.init, N.obs.init=N.obs.init, T=T, Park=Park, M=M, M.3yr=M.3yr, M.1yr=M.1yr, M.ster=M.ster, M.cull=M.cull, N.obs=N.obs, N.obsno1s=N.obsno1s, y.alpha=y.alpha2, area=area,N=N,sumNpark=sumNpark.4,sumNpark.3yr=sumNpark.3yr,sumNpark.1yr=sumNpark.1yr,sumNpark.ster=sumNpark.ster,sumN=sumN.4,sumN.3yr=sumN.3yr,sumN.1yr=sumN.1yr,sumN.ster=sumN.ster,sumN.cull=sumN.cull,N.3yr=N.3yr,N.1yr=N.1yr,N.ster=N.ster,N.cull=N.cull,M.lambda.cull=M.lambda.cull,M.lambda.ster=M.lambda.ster,M.lambda.1yr=M.lambda.1yr,M.lambda.3yr=M.lambda.3yr)
+data = list(treated.does=treated.does,N.init=N.init, N.obs.init=N.obs.init, T=T, 
+            Park=Park, M=M, M.3yr=M.3yr, M.1yr=M.1yr, M.ster=M.ster, M.cull=M.cull,
+            N.obs=N.obs, N.obsno1s=N.obsno1s, y.alpha=y.alpha2, area=area,N=N,
+            sumNpark=sumNpark.4,sumNpark.3yr=sumNpark.3yr,sumNpark.1yr=sumNpark.1yr,
+            sumNpark.ster=sumNpark.ster,sumN=sumN.4,sumN.3yr=sumN.3yr,sumN.1yr=sumN.1yr,
+            sumN.ster=sumN.ster,sumN.cull=sumN.cull,N.3yr=N.3yr,N.1yr=N.1yr,N.ster=N.ster,
+            N.cull=N.cull,M.lambda.cull=M.lambda.cull,M.lambda.ster=M.lambda.ster,
+            M.lambda.1yr=M.lambda.1yr,M.lambda.3yr=M.lambda.3yr,mu.a=mu.a,mu.b=mu.b,
+            mu.a1=mu.a1,mu.b1=mu.b1,mu.a2=mu.a2,mu.b2=mu.b2,sd.a=sd.a,sd.b=sd.b,sd.a1=sd.a1,
+            sd.b1=sd.b1,sd.a2=sd.a2,sd.b2=sd.b2)
 
 jM.4=jags.model(paste(model.dir,"Deer_Model_Experiments_JAGS.R",sep=""), data=data,inits=inits, n.chain=length(inits), n.adapt=n.adapt)
 
@@ -494,7 +530,16 @@ treated.does = .6
 sumNpark.6=matrix(NA,T-5,Park)
 sumN.6=matrix(NA,1,T-5)
 
-data = list(treated.does=treated.does,N.init=N.init, N.obs.init=N.obs.init, T=T, Park=Park, M=M, M.3yr=M.3yr, M.1yr=M.1yr, M.ster=M.ster, M.cull=M.cull, N.obs=N.obs, N.obsno1s=N.obsno1s, y.alpha=y.alpha2, area=area,N=N,sumNpark=sumNpark.6,sumNpark.3yr=sumNpark.3yr,sumNpark.1yr=sumNpark.1yr,sumNpark.ster=sumNpark.ster,sumN=sumN.6,sumN.3yr=sumN.3yr,sumN.1yr=sumN.1yr,sumN.ster=sumN.ster,sumN.cull=sumN.cull,N.3yr=N.3yr,N.1yr=N.1yr,N.ster=N.ster,N.cull=N.cull,M.lambda.cull=M.lambda.cull,M.lambda.ster=M.lambda.ster,M.lambda.1yr=M.lambda.1yr,M.lambda.3yr=M.lambda.3yr)
+data = list(treated.does=treated.does,N.init=N.init, N.obs.init=N.obs.init, T=T, Park=Park,
+            M=M, M.3yr=M.3yr, M.1yr=M.1yr, M.ster=M.ster, M.cull=M.cull, N.obs=N.obs,
+            N.obsno1s=N.obsno1s, y.alpha=y.alpha2, area=area,N=N,sumNpark=sumNpark.6,
+            sumNpark.3yr=sumNpark.3yr,sumNpark.1yr=sumNpark.1yr,sumNpark.ster=sumNpark.ster,
+            sumN=sumN.6,sumN.3yr=sumN.3yr,sumN.1yr=sumN.1yr,sumN.ster=sumN.ster,
+            sumN.cull=sumN.cull,N.3yr=N.3yr,N.1yr=N.1yr,N.ster=N.ster,N.cull=N.cull,
+            M.lambda.cull=M.lambda.cull,M.lambda.ster=M.lambda.ster,
+            M.lambda.1yr=M.lambda.1yr,M.lambda.3yr=M.lambda.3yr,mu.a=mu.a,mu.b=mu.b,
+            mu.a1=mu.a1,mu.b1=mu.b1,mu.a2=mu.a2,mu.b2=mu.b2,sd.a=sd.a,sd.b=sd.b,sd.a1=sd.a1,
+            sd.b1=sd.b1,sd.a2=sd.a2,sd.b2=sd.b2)
 
 jM.6=jags.model(paste(model.dir,"Deer_Model_Experiments_JAGS.R",sep=""), data=data,inits=inits, n.chain=length(inits), n.adapt=n.adapt)
 
@@ -555,7 +600,16 @@ treated.does = .9
 sumNpark.9=matrix(NA,T-5,Park)
 sumN.9=matrix(NA,1,T-5)
 
-data = list(treated.does=treated.does,N.init=N.init, N.obs.init=N.obs.init, T=T, Park=Park, M=M, M.3yr=M.3yr, M.1yr=M.1yr, M.ster=M.ster, M.cull=M.cull, N.obs=N.obs, N.obsno1s=N.obsno1s, y.alpha=y.alpha2, area=area,N=N,sumNpark=sumNpark.9,sumNpark.3yr=sumNpark.3yr,sumNpark.1yr=sumNpark.1yr,sumNpark.ster=sumNpark.ster,sumN=sumN.9,sumN.3yr=sumN.3yr,sumN.1yr=sumN.1yr,sumN.ster=sumN.ster,sumN.cull=sumN.cull,N.3yr=N.3yr,N.1yr=N.1yr,N.ster=N.ster,N.cull=N.cull,M.lambda.cull=M.lambda.cull,M.lambda.ster=M.lambda.ster,M.lambda.1yr=M.lambda.1yr,M.lambda.3yr=M.lambda.3yr)
+data = list(treated.does=treated.does,N.init=N.init, N.obs.init=N.obs.init, T=T, 
+            Park=Park, M=M, M.3yr=M.3yr, M.1yr=M.1yr, M.ster=M.ster, M.cull=M.cull,
+            N.obs=N.obs, N.obsno1s=N.obsno1s, y.alpha=y.alpha2, area=area,N=N,
+            sumNpark=sumNpark.9,sumNpark.3yr=sumNpark.3yr,sumNpark.1yr=sumNpark.1yr,
+            sumNpark.ster=sumNpark.ster,sumN=sumN.9,sumN.3yr=sumN.3yr,sumN.1yr=sumN.1yr,
+            sumN.ster=sumN.ster,sumN.cull=sumN.cull,N.3yr=N.3yr,N.1yr=N.1yr,N.ster=N.ster,
+            N.cull=N.cull,M.lambda.cull=M.lambda.cull,M.lambda.ster=M.lambda.ster,
+            M.lambda.1yr=M.lambda.1yr,M.lambda.3yr=M.lambda.3yr,mu.a=mu.a,mu.b=mu.b,
+            mu.a1=mu.a1,mu.b1=mu.b1,mu.a2=mu.a2,mu.b2=mu.b2,sd.a=sd.a,sd.b=sd.b,sd.a1=sd.a1,
+            sd.b1=sd.b1,sd.a2=sd.a2,sd.b2=sd.b2)
 
 jM.9=jags.model(paste(model.dir,"Deer_Model_Experiments_JAGS.R",sep=""), data=data,inits=inits, n.chain=length(inits), n.adapt=n.adapt)
 
@@ -889,7 +943,15 @@ treated.does = .2
 sumNpark.2=matrix(NA,T-5,Park)
 sumN.2=matrix(NA,1,T-5)
 
-data = list(treated.does=treated.does,N.init=N.init, N.obs.init=N.obs.init, T=T, Park=Park, M=M, M.3yr=M.3yr, M.1yr=M.1yr, M.ster=M.ster, M.cull=M.cull, N.obs=N.obs, N.obsno1s=N.obsno1s, y.alpha=y.alpha2, area=area,N=N,sumNpark=sumNpark.2,sumNpark.3yr=sumNpark.3yr,sumNpark.1yr=sumNpark.1yr,sumNpark.ster=sumNpark.ster,sumN=sumN.2,sumN.3yr=sumN.3yr,sumN.1yr=sumN.1yr,sumN.ster=sumN.ster,sumN.cull=sumN.cull,N.3yr=N.3yr,N.1yr=N.1yr,N.ster=N.ster,N.cull=N.cull)
+data = list(treated.does=treated.does,N.init=N.init, N.obs.init=N.obs.init, T=T, 
+            Park=Park, M=M, M.3yr=M.3yr, M.1yr=M.1yr, M.ster=M.ster, M.cull=M.cull, 
+            N.obs=N.obs, N.obsno1s=N.obsno1s, y.alpha=y.alpha2, area=area,N=N,
+            sumNpark=sumNpark.2,sumNpark.3yr=sumNpark.3yr,sumNpark.1yr=sumNpark.1yr,
+            sumNpark.ster=sumNpark.ster,sumN=sumN.2,sumN.3yr=sumN.3yr,sumN.1yr=sumN.1yr,
+            sumN.ster=sumN.ster,sumN.cull=sumN.cull,N.3yr=N.3yr,N.1yr=N.1yr,N.ster=N.ster,
+            N.cull=N.cull,mu.a=mu.a,mu.b=mu.b,
+            mu.a1=mu.a1,mu.b1=mu.b1,mu.a2=mu.a2,mu.b2=mu.b2,sd.a=sd.a,sd.b=sd.b,sd.a1=sd.a1,
+            sd.b1=sd.b1,sd.a2=sd.a2,sd.b2=sd.b2)
 
 jM.2.cull1st=jags.model(paste(model.dir,"Deer_Model_Experiments_Cull1st_JAGS.R",sep=""), data=data,inits=inits, n.chain=length(inits), n.adapt=n.adapt)
 
@@ -900,7 +962,15 @@ treated.does = .4
 sumNpark.4=matrix(NA,T-5,Park)
 sumN.4=matrix(NA,1,T-5)
 
-data = list(treated.does=treated.does,N.init=N.init, N.obs.init=N.obs.init, T=T, Park=Park, M=M, M.3yr=M.3yr, M.1yr=M.1yr, M.ster=M.ster, M.cull=M.cull, N.obs=N.obs, N.obsno1s=N.obsno1s, y.alpha=y.alpha2, area=area,N=N,sumNpark=sumNpark.4,sumNpark.3yr=sumNpark.3yr,sumNpark.1yr=sumNpark.1yr,sumNpark.ster=sumNpark.ster,sumN=sumN.4,sumN.3yr=sumN.3yr,sumN.1yr=sumN.1yr,sumN.ster=sumN.ster,sumN.cull=sumN.cull,N.3yr=N.3yr,N.1yr=N.1yr,N.ster=N.ster,N.cull=N.cull)
+data = list(treated.does=treated.does,N.init=N.init, N.obs.init=N.obs.init, T=T, 
+            Park=Park, M=M, M.3yr=M.3yr, M.1yr=M.1yr, M.ster=M.ster, M.cull=M.cull,
+            N.obs=N.obs, N.obsno1s=N.obsno1s, y.alpha=y.alpha2, area=area,N=N,
+            sumNpark=sumNpark.4,sumNpark.3yr=sumNpark.3yr,sumNpark.1yr=sumNpark.1yr,
+            sumNpark.ster=sumNpark.ster,sumN=sumN.4,sumN.3yr=sumN.3yr,sumN.1yr=sumN.1yr,
+            sumN.ster=sumN.ster,sumN.cull=sumN.cull,N.3yr=N.3yr,N.1yr=N.1yr,N.ster=N.ster,
+            N.cull=N.cull,mu.a=mu.a,mu.b=mu.b,
+            mu.a1=mu.a1,mu.b1=mu.b1,mu.a2=mu.a2,mu.b2=mu.b2,sd.a=sd.a,sd.b=sd.b,sd.a1=sd.a1,
+            sd.b1=sd.b1,sd.a2=sd.a2,sd.b2=sd.b2)
 
 jM.4.cull1st=jags.model(paste(model.dir,"Deer_Model_Experiments_Cull1st_JAGS.R",sep=""), data=data,inits=inits, n.chain=length(inits), n.adapt=n.adapt)
 
@@ -911,7 +981,15 @@ treated.does = .6
 sumNpark.6=matrix(NA,T-5,Park)
 sumN.6=matrix(NA,1,T-5)
 
-data = list(treated.does=treated.does,N.init=N.init, N.obs.init=N.obs.init, T=T, Park=Park, M=M, M.3yr=M.3yr, M.1yr=M.1yr, M.ster=M.ster, M.cull=M.cull, N.obs=N.obs, N.obsno1s=N.obsno1s, y.alpha=y.alpha2, area=area,N=N,sumNpark=sumNpark.6,sumNpark.3yr=sumNpark.3yr,sumNpark.1yr=sumNpark.1yr,sumNpark.ster=sumNpark.ster,sumN=sumN.6,sumN.3yr=sumN.3yr,sumN.1yr=sumN.1yr,sumN.ster=sumN.ster,sumN.cull=sumN.cull,N.3yr=N.3yr,N.1yr=N.1yr,N.ster=N.ster,N.cull=N.cull)
+data = list(treated.does=treated.does,N.init=N.init, N.obs.init=N.obs.init, T=T, 
+            Park=Park, M=M, M.3yr=M.3yr, M.1yr=M.1yr, M.ster=M.ster, M.cull=M.cull, 
+            N.obs=N.obs, N.obsno1s=N.obsno1s, y.alpha=y.alpha2, area=area,N=N,
+            sumNpark=sumNpark.6,sumNpark.3yr=sumNpark.3yr,sumNpark.1yr=sumNpark.1yr,
+            sumNpark.ster=sumNpark.ster,sumN=sumN.6,sumN.3yr=sumN.3yr,sumN.1yr=sumN.1yr,
+            sumN.ster=sumN.ster,sumN.cull=sumN.cull,N.3yr=N.3yr,N.1yr=N.1yr,N.ster=N.ster,
+            N.cull=N.cull,mu.a=mu.a,mu.b=mu.b,mu.a1=mu.a1,mu.b1=mu.b1,mu.a2=mu.a2,
+            mu.b2=mu.b2,sd.a=sd.a,sd.b=sd.b,sd.a1=sd.a1,
+            sd.b1=sd.b1,sd.a2=sd.a2,sd.b2=sd.b2)
 
 jM.6.cull1st=jags.model(paste(model.dir,"Deer_Model_Experiments_Cull1st_JAGS.R",sep=""), data=data,inits=inits, n.chain=length(inits), n.adapt=n.adapt)
 
@@ -922,7 +1000,15 @@ treated.does = .9
 sumNpark.9=matrix(NA,T-5,Park)
 sumN.9=matrix(NA,1,T-5)
 
-data = list(treated.does=treated.does,N.init=N.init, N.obs.init=N.obs.init, T=T, Park=Park, M=M, M.3yr=M.3yr, M.1yr=M.1yr, M.ster=M.ster, M.cull=M.cull, N.obs=N.obs, N.obsno1s=N.obsno1s, y.alpha=y.alpha2, area=area,N=N,sumNpark=sumNpark.9,sumNpark.3yr=sumNpark.3yr,sumNpark.1yr=sumNpark.1yr,sumNpark.ster=sumNpark.ster,sumN=sumN.9,sumN.3yr=sumN.3yr,sumN.1yr=sumN.1yr,sumN.ster=sumN.ster,sumN.cull=sumN.cull,N.3yr=N.3yr,N.1yr=N.1yr,N.ster=N.ster,N.cull=N.cull)
+data = list(treated.does=treated.does,N.init=N.init, N.obs.init=N.obs.init, T=T,
+            Park=Park, M=M, M.3yr=M.3yr, M.1yr=M.1yr, M.ster=M.ster, M.cull=M.cull, 
+            N.obs=N.obs, N.obsno1s=N.obsno1s, y.alpha=y.alpha2, area=area,N=N,
+            sumNpark=sumNpark.9,sumNpark.3yr=sumNpark.3yr,sumNpark.1yr=sumNpark.1yr,
+            sumNpark.ster=sumNpark.ster,sumN=sumN.9,sumN.3yr=sumN.3yr,sumN.1yr=sumN.1yr,
+            sumN.ster=sumN.ster,sumN.cull=sumN.cull,N.3yr=N.3yr,N.1yr=N.1yr,N.ster=N.ster,
+            N.cull=N.cull,mu.a=mu.a,mu.b=mu.b,mu.a1=mu.a1,mu.b1=mu.b1,mu.a2=mu.a2,
+            mu.b2=mu.b2,sd.a=sd.a,sd.b=sd.b,sd.a1=sd.a1,
+            sd.b1=sd.b1,sd.a2=sd.a2,sd.b2=sd.b2)
 
 jM.9.cull1st=jags.model(paste(model.dir,"Deer_Model_Experiments_Cull1st_JAGS.R",sep=""), data=data,inits=inits, n.chain=length(inits), n.adapt=n.adapt)
 
@@ -1079,6 +1165,6 @@ abline(v=15,lty=2)
 }
 if(DRAW==TRUE) dev.off()
 
-
+save.image(file=paste(dump.dir,"deer.all.mcmc.inc.Rdata",sep=""))
 
 ##################################################################################################################################################################################################################################################################################################################################################################################################
