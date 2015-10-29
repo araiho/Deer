@@ -12,7 +12,7 @@ y.sd=as.list(y.sd)
 
 data = list(y.m=y.m, y.sd=y.sd)
 
-inits= list(list(a=5,b=5),list(a=10,b=1),list(a=1,b=10))
+inits= list(list(a=5,b=5),list(a=1,b=10))
 
 jM=jags.model(paste(model.dir,"Survival JAGS.R",sep=""), data=data,inits=inits, n.chain=length(inits), n.adapt=n.adapt)
 
@@ -44,7 +44,7 @@ y.sd=as.list(y.sd)
 
 data = list(y.m=y.m, y.sd=y.sd)
 
-inits= list(list(a=355,b=125),list(a=355+.2*355,b=125+.2*125),list(a=355-.2*355,b=125-.2*125))
+inits= list(list(a=355,b=125),list(a=355-.2*355,b=125-.2*125))
 
 jM=jags.model(paste(model.dir,"Survival JAGS.R",sep=""), data=data,inits=inits, n.chain=length(inits), n.adapt=n.adapt)
 

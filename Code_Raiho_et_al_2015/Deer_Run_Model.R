@@ -144,28 +144,46 @@ if(DRAW==TRUE) dev.off()
 
 zmj=jags.samples(jM,variable.names=c("mean.fawn","mean.adult.female","mean.adult.male","r","beta","ratio","sigma.p"),n.iter=n.iter,thin=1)
 
+quartz()
+par(mfrow=c(2,2))
+plot.gamma.prior <- function(mu.a,mu.b,sd.a,sd.b){
+  n=500000
+  a = rgamma(n,mu.a^2/sd.a^2,mu.a/sd.a^2)
+  b = rgamma(n,mu.b^2/sd.b^2,mu.b/sd.b^2)
+  s=cbind(a,b)
+  m=numeric(n)
+  for(j in 1:n) {
+    m[j]=rbeta(1,a[j],b[j]) 
+  }
+  return(m)
+}
+m=plot.gamma.prior()
+
+mean(m);sd(m)
+plot(density(m,adjust=2),lty="dashed",xlim=c(0,1))
+
 if(DRAW==TRUE) pdf(paste(dump.dir,"deer.posteriors.pdf",sep=""))
 
 par(mfrow=c(3,3))
-hist(zmj$mean.adult.female,xlab="Adult Female Survival",col=8,breaks=20,xlim=c(0,1),freq=FALSE,ylab="Probability Density",main=NA)
-lines(seq(0,1,.005),dunif(seq(0,1,.005),0,1),lty=2)
+hist(zmj$mean.adult.female,xlab="Adult female survival",col=8,breaks=20,xlim=c(0,1),freq=FALSE,ylab="Probability density",main=NA)
+lines(density(rbeta(10000,mu.a,mu.b)),lty=2)
 
-hist(zmj$mean.adult.male,xlab="Adult Male Survival",col=8,breaks=20,xlim=c(0,1),freq=FALSE,ylab="Probability Density",main=NA)
-lines(seq(0,1,.005),dunif(seq(0,1,.005),0,1),lty=2)
+hist(zmj$mean.adult.male,xlab="Adult male survival",col=8,breaks=20,xlim=c(0,1),freq=FALSE,ylab="Probability density",main=NA)
+lines(density(rbeta(10000,mu.a2,mu.b2)),lty=2)
 
-hist(zmj$mean.fawn,xlab="Juvenile Survival",col=8,breaks=20,xlim=c(0,1),freq=FALSE,ylab="Probability Density",main=NA)
-lines(seq(0,1,.005),dunif(seq(0,1,.005),0,1),lty=2)
+hist(zmj$mean.fawn,xlab="Juvenile survival",col=8,breaks=20,xlim=c(0,1),freq=FALSE,ylab="Probability density",main=NA)
+lines(density(rbeta(10000,mu.a1,mu.b1)),lty=2)
 
-hist(zmj$r,xlab="Maximum Birth Rate (fawns per doe)",col=8,breaks=20,freq=FALSE,xlim=c(0,2),ylab="Probability Density",main=NA)
+hist(zmj$r,xlab="Maximum birth rate (fawns per doe)",col=8,breaks=20,freq=FALSE,xlim=c(0,2),ylab="Probability density",main=NA)
 lines(seq(-10,10,.005),dnorm(seq(-10,10,.005),2*3.09*65^-.33,.1304),lty=2)
 
-hist(zmj$ratio,xlab="Juvenile Sex Ratio (females:males)",col=8,breaks=20,xlim=c(.4,.6),ylim=c(0,25),freq=FALSE,ylab="Probability Density",main=NA)
+hist(zmj$ratio,xlab="Juvenile sex ratio (females:males)",col=8,breaks=20,xlim=c(.4,.6),ylim=c(0,25),freq=FALSE,ylab="Probability density",main=NA)
 lines(seq(0,1,.005),dbeta(seq(0,1,.005),312,312),lty=2)
 
-hist(zmj$beta,xlab=expression(paste("Carrying Capacity (deer per ", km^2,")")),col=8,breaks=20,freq=FALSE,ylab="Probability Density",main=NA)
-lines(seq(0,100,.005),dunif(seq(0,100,.005),0,100),lty=2)
+hist(zmj$beta,xlab=expression(paste("Carrying capacity (deer per ", km^2,")")),col=8,breaks=20,freq=FALSE,ylab="Probability density",main=NA)
+lines(seq(0,100,.05),dunif(seq(0,100,.05),0,100),lty=2)
 
-hist(zmj$sigma.p,xlab="Process Variance",col=8,breaks=20,freq=FALSE,ylab="Probability Density",main=NA)
+hist(zmj$sigma.p,xlab="Process variance",col=8,breaks=20,freq=FALSE,ylab="Probability density",main=NA)
 lines(seq(0,2,.005),dunif(seq(0,2,.005),0,2),lty=2)
 if(DRAW==TRUE) dev.off()
 tvec=as.character(unique(raw.noFOWA[,1]))
@@ -182,7 +200,7 @@ tvec=as.character(unique(raw.noFOWA[,1]))
 plot(seq(1,150,1),exp(median(zmj$r)-(median(zmj$r)/median(zmj$beta))*seq(1,150,1)),type="l")
 
 if(DRAW==TRUE) pdf(paste(dump.dir,"rK.pdf",sep=""))
-hist(zmj$r/zmj$beta,col=8,breaks=20,xlab=expression(paste("r/K (", km^2,")")),main=NA,freq=FALSE,ylab="Probability Density")
+hist(zmj$r/zmj$beta,col=8,breaks=20,xlab=expression(paste(italic(r)," / ",symbol(K)," (", km^2,")")),main=NA,freq=FALSE,ylab="Probability density")
 if(DRAW==TRUE) dev.off()
 
 #plot(seq(1,median(zmj$beta),1)*-.03+median(zmj$r))
@@ -204,11 +222,11 @@ sumN.quant=matrix(0,18,3) ;sumN.3yr.quant=sumN.quant ;sumN.1yr.quant=sumN.quant 
 median.create=array(0,dim=c(18,n.iter,3))
 
 for(t in 1:18){
-	for(i in 1:n.iter){
-		for(c in 1:3){
-			median.create[t,i,c] = median(zmj1.base$denNpark[t,,i,c])
-		}
-	}	
+# 	for(i in 1:n.iter){
+# 		for(c in 1:3){
+# 			median.create[t,i,c] = median(zmj1.base$denNpark[t,,i,c])
+# 		}
+# 	}	
 	sumN.quant[t,1]=quantile(median.create[t,,],probs=c(.025))
 	sumN.quant[t,2]=quantile(median.create[t,,],probs=c(.50))
 	sumN.quant[t,3]=quantile(median.create[t,,],probs=c(.975))
@@ -220,7 +238,7 @@ if(DRAW==TRUE) pdf(paste(dump.dir,"deer.forecast.pdf",sep=""))
 setEPS()
 postscript("deer.forecast.eps",family="Times")
 Sum.area=mean(as.numeric(area))
-plot(sumN.quant[,2],ylim=c(0,80),ylab=expression(paste("Deer Density ",(km^2))),xlab="Year",type="l",lwd=2, xaxt='n')
+plot(sumN.quant[,2],ylim=c(0,80),ylab=expression(paste("Deer density ",(km^2))),xlab="Year",type="l",lwd=2, xaxt='n')
 lines(sumN.quant[,1],lty=2,lwd=2)
 lines(sumN.quant[,3],lty=2,lwd=2)
 
@@ -271,7 +289,7 @@ for(p in 1:Park){
 	}
 		sum.den.park[,,p]=sumNpark.quant[,,p]
 		
-		plot(sum.den.park[,2,p],ylim=c(0,150),ylab=expression(paste("Deer Density ",(km^2))),xlab="Year",main=substitute(paste(a), list(a=tvec[p])),type="l",lwd=1, xaxt='n')
+		plot(sum.den.park[,2,p],ylim=c(0,150),ylab=expression(paste("Deer density ",(km^2))),xlab="Year",main=substitute(paste(a), list(a=tvec[p])),type="l",lwd=1, xaxt='n')
 		lines(sum.den.park[,1,p],lty=2,lwd=1)
 		lines(sum.den.park[,3,p],lty=2,lwd=1)
 		points(N.obs[N.obs[,3]==p,5],pch=20,cex=.5)
@@ -331,23 +349,23 @@ for(i in 1:n.iter){
 if(DRAW==TRUE) pdf(paste(dump.dir,"base_sens.pdf",sep=""))
 par(mfrow=c(2,2))
 
-hist(base.sens[1,2,,],xlim=c(0,1),col=8,breaks=20,main=NA,xlab=expression(paste(s[2],f[it])),freq=FALSE,ylab="Probability Density")
-text(x=.8,5,labels=bquote(Mean==.(format(mean(base.sens[1,2,,]),digits=3))))
-text(x=.8,4.6,labels=bquote(Median==.(format(median(base.sens[1,2,,]),digits=3))))
-text(x=.8,4.2,labels=bquote(paste("2.5% BCI")==.(format(quantile(base.sens[1,2,,],.025),digits=3))))
-text(x=.8,3.8,labels=bquote(paste("97.5% BCI")==.(format(quantile(base.sens[1,2,,],.975),digits=3))))
+hist(base.sens[1,2,,],xlim=c(0,1),col=8,breaks=20,main=NA,xlab=expression(paste(s[2],f[it])),freq=FALSE,ylab="Probability density")
+text(x=.75,5,labels=bquote(Mean==.(format(mean(base.sens[1,2,,]),digits=3))))
+text(x=.75,4.25,labels=bquote(Median==.(format(median(base.sens[1,2,,]),digits=3))))
+text(x=.75,3.5,labels=bquote(paste("2.5% BCI")==.(format(quantile(base.sens[1,2,,],.025),digits=3))))
+text(x=.75,2.75,labels=bquote(paste("97.5% BCI")==.(format(quantile(base.sens[1,2,,],.975),digits=3))))
 
-hist(base.sens[2,1,,],xlim=c(0,1),col=8,breaks=20,main=NA,xlab=expression(paste(s[1],m)),freq=FALSE,ylab="Probability Density")
-text(x=.2,4.7,labels=bquote(Mean==.(format(mean(base.sens[2,1,,]),digits=3))))
-text(x=.2,4.3,labels=bquote(Median==.(format(median(base.sens[2,1,,]),digits=3))))
-text(x=.2,3.9,labels=bquote(paste("2.5% BCI")==.(format(quantile(base.sens[2,1,,],.025),digits=3))))
-text(x=.2,3.5,labels=bquote(paste("97.5% BCI")==.(format(quantile(base.sens[2,1,,],.975),digits=3))))
+hist(base.sens[2,1,,],xlim=c(0,1),col=8,breaks=20,main=NA,xlab=expression(paste(s[1],m)),freq=FALSE,ylab="Probability density")
+text(x=.25,5,labels=bquote(Mean==.(format(mean(base.sens[2,1,,]),digits=3))))
+text(x=.25,4.5,labels=bquote(Median==.(format(median(base.sens[2,1,,]),digits=3))))
+text(x=.25,4,labels=bquote(paste("2.5% BCI")==.(format(quantile(base.sens[2,1,,],.025),digits=3))))
+text(x=.25,3.5,labels=bquote(paste("97.5% BCI")==.(format(quantile(base.sens[2,1,,],.975),digits=3))))
 
-hist(base.sens[2,2,,],xlim=c(0,1),col=8,breaks=20,main=NA,xlab=expression(paste(s[2])),freq=FALSE,ylab="Probability Density")
-text(x=.2,8.7,labels=bquote(Mean==.(format(mean(base.sens[2,2,,]),digits=3))))
-text(x=.2,8,labels=bquote(Median==.(format(median(base.sens[2,2,,]),digits=3))))
-text(x=.2,7.2,labels=bquote(paste("2.5% BCI")==.(format(quantile(base.sens[2,2,,],.025),digits=3))))
-text(x=.2,6.5,labels=bquote(paste("97.5% BCI")==.(format(quantile(base.sens[2,2,,],.975),digits=3))))
+hist(base.sens[2,2,,],xlim=c(0,1),col=8,breaks=20,main=NA,xlab=expression(paste(s[2])),freq=FALSE,ylab="Probability density")
+text(x=.25,10,labels=bquote(Mean==.(format(mean(base.sens[2,2,,]),digits=3))))
+text(x=.25,8.5,labels=bquote(Median==.(format(median(base.sens[2,2,,]),digits=3))))
+text(x=.25,7,labels=bquote(paste("2.5% BCI")==.(format(quantile(base.sens[2,2,,],.025),digits=3))))
+text(x=.25,5.5,labels=bquote(paste("97.5% BCI")==.(format(quantile(base.sens[2,2,,],.975),digits=3))))
 if(DRAW==TRUE) dev.off()
 
 
@@ -884,17 +902,24 @@ yvec=as.character(seq(2001,2018,1))
 labs = c("20%","40%","60%","90%")
 
 if(DRAW==TRUE) pdf(paste(dump.dir,"experiments14-18.pdf",sep=""))
-par(mfrow=c(4,2),mar=c(2,4.5,2,3))
+par(mfrow=c(4,2),mar=c(4.5,4.5,1.25,3),oma=c(1,1,1,1))
 
 for(r in 1:4){
 	for(t in c(14,18)){
 		if(t==14){
-plot(density(median.create[t,,]),col="black",lwd=3,xlim=c(0,60),ylim=c(0,1.1),main=substitute(paste(a), list(a=yvec[t])),xlab=expression(paste("Deer Density ",(km^2))),ylab = "Probability Density")
+plot(density(median.create[t,,]),col="black",lwd=3,
+     xlim=c(0,45),ylim=c(0,.4),main=substitute(paste(a), list(a=yvec[t])),
+     xlab=expression(paste("Deer density ",(km^2))),ylab = "Probability density")
 } else{
-plot(density(median.create[t,,]),col="black",lwd=3,xlim=c(0,60),ylim=c(0,1.1),main=substitute(paste(a), list(a=yvec[t])),xlab=expression(paste("Deer Density ",(km^2))),ylab=NA)
+plot(density(median.create[t,,]),col="black",lwd=3,xlim=c(0,45),ylim=c(0,.4),
+     main=substitute(paste(a), list(a=yvec[t])),
+     xlab=expression(paste("Deer density ",(km^2))),ylab=NA)
 mtext(labs[r], las=1,
        side=2,line=3)
 }
+    if(r == 1){
+      title(yvec[t])
+    }
 lines(density(median.create1[r,1,t,,]),col="green",lwd=2)
 lines(density(median.create1[r,2,t,,]),col="purple",lwd=2)
 lines(density(median.create1[r,3,t,,]),col="blue",lwd=2)
@@ -1144,16 +1169,20 @@ save(alt.MGMT1.cull1st,file=paste(dump.dir,"alt.MGMT1.cull1st.Rdata",sep=""))
 
 yvec=as.character(seq(2001,2018,1))
 
-if(DRAW==TRUE) pdf(paste("experiments15-18.pdf",sep=""))
-par(mfrow=c(4,2),mar=c(2,4.5,2,3))
+if(DRAW==TRUE) pdf(paste(dump.dir,"experiments15-18.pdf",sep=""))
+#quartz()
+par(mfrow=c(4,2),mar=c(4.5,4.5,1.25,3),oma=c(1,1,1,1))
 
 for(r in 1:4){
 	for(t in c(15,18)){
 		if(t==15){
-plot(density(median.create[t,,]),col="white",lwd=3,xlim=c(0,20),ylim=c(0,1.1),main=substitute(paste(a), list(a=yvec[t])),xlab=expression(paste("Deer Density ",(km^2))),ylab="Probability Density")
-		} else {			plot(density(median.create[t,,]),col="white",lwd=3,xlim=c(0,20),ylim=c(0,1.1),main=substitute(paste(a), list(a=yvec[t])),xlab=expression(paste("Deer Density ",(km^2))),ylab=NA)
+plot(density(median.create[t,,]),col="white",lwd=3,xlim=c(0,20),ylim=c(0,.75),main=substitute(paste(a), list(a=yvec[t])),xlab=expression(paste("Deer density ",(km^2))),ylab="Probability density")
+		} else {			plot(density(median.create[t,,]),col="white",lwd=3,xlim=c(0,20),ylim=c(0,.75),main=substitute(paste(a), list(a=yvec[t])),xlab=expression(paste("Deer density ",(km^2))),ylab=NA)
 mtext(labs[r], las=1, side=2, line=3)
 		}
+    if(r==1){
+      title(yvec[t])
+    }
 lines(density(median.create2[r,1,t,,]),col="green",lwd=2)
 lines(density(median.create2[r,2,t,,]),col="purple",lwd=2)
 lines(density(median.create2[r,3,t,,]),col="blue",lwd=2)

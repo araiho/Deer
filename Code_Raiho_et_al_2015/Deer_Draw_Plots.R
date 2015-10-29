@@ -8,16 +8,22 @@ alt.MGMT1[,1]=c(rep("No Action",5),rep("3 Year",20),rep("1 Year",20),rep("Steril
 
 colnames(alt.MGMT1) <- c("Treatment","Percent","Year","P<","Pin","P>","Number")
 
-melt_dat=melt(cbind(alt.MGMT1[6:nrow(alt.MGMT1),1:3],alt.MGMT1[6:nrow(alt.MGMT1),7]),
-              id.var=c("Treatment","Percent","Year"))
+plot1 <- alt.MGMT1[6:nrow(alt.MGMT1),1:3]
+plot2 <- alt.MGMT1[6:nrow(alt.MGMT1),7]
+plot3 <- cbind(plot1,plot2)
+melt_dat=melt(plot3,id.var=c("Treatment","Percent","Year"))
 #head(melt_dat)
 
 if(DRAW==TRUE) pdf(paste(dump.dir,"cats_barplot.pdf",sep=""))
 ggplot(melt_dat, aes(x = variable, y = value, fill = as.factor(Year))) + 
   geom_bar(position="dodge",stat = "identity") +
   facet_wrap(~Treatment+Percent,nrow=4) + 
-  theme(axis.text.x = element_blank(), legend.title = element_blank()) +
-  ylab("Number Treated") + 
+  theme(axis.text.y = element_text(colour="black"),
+        legend.title = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.y = element_line("black",size = 1),
+        axis.ticks.x = element_blank()) +
+  ylab("Number treated") + 
   xlab("Year") +
   scale_fill_grey(name=NULL)
 if(DRAW==TRUE) dev.off()
@@ -37,8 +43,11 @@ if(DRAW==TRUE) pdf(paste(dump.dir,"cats_barplot_cull1st.pdf",sep=""))
 ggplot(melt_dat1, aes(x = variable, y = value, fill = as.factor(Year))) + 
   geom_bar(position="dodge",stat = "identity") +
   facet_wrap(~Treatment+Percent,nrow=4) + 
-  theme(axis.text.x = element_blank(), legend.title = element_blank()) +
-  ylab("Number Treated") + 
+  theme(axis.text.y = element_text(colour="black"),
+        legend.title = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.y = element_line("black",size = 1),
+        axis.ticks.x = element_blank()) +ylab("Number treated") + 
   xlab("Year") +
   scale_fill_grey(name=NULL)
 if(DRAW==TRUE) dev.off()

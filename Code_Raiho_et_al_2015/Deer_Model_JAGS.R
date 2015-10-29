@@ -6,18 +6,18 @@ model{
   ##### Priors ##### 
   #####
   
-  a ~ dgamma(mu.a^2/sd.a^2, mu.a/sd.a^2)
-  b ~ dgamma(mu.b^2/sd.b^2, mu.b/sd.b^2)
+  a ~  dgamma(mu.a^2/sd.a^2, mu.a/sd.a^2) #dgamma(.001,.001)#
+  b ~  dgamma(mu.b^2/sd.b^2, mu.b/sd.b^2)
   
   mean.adult.female<- a/(a+b)
   
-  a1 ~ dgamma(mu.a1^2/sd.a1^2, mu.a1/sd.a1^2)
-  b1 ~ dgamma(mu.b1^2/sd.b1^2, mu.b1/sd.b1^2)
+  a1 ~  dgamma(mu.a1^2/sd.a1^2, mu.a1/sd.a1^2)
+  b1 ~  dgamma(mu.b1^2/sd.b1^2, mu.b1/sd.b1^2)
   
   mean.fawn <- a1/(a1+b1)
   
-  a2 ~ dgamma(mu.a2^2/sd.a2^2, mu.a2/sd.a2^2)
-  b2 ~ dgamma(mu.b2^2/sd.b2^2, mu.b2/sd.b2^2)
+  a2 ~  dgamma(mu.a2^2/sd.a2^2, mu.a2/sd.a2^2)
+  b2 ~  dgamma(mu.b2^2/sd.b2^2, mu.b2/sd.b2^2)
   
   mean.adult.male <- a2/(a2+b2)
   
